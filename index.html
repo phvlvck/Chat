@@ -1,377 +1,1034 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💬 دردشة حقيقية</title>
+    <title>لعبة حرب واقعية - محاكاة ببجي</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
-        .login-box {
-            max-width: 400px; margin: 50px auto; padding: 30px;
-            background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #0a3d62, #1e272e);
+            color: #fff;
+            overflow: hidden;
             text-align: center;
         }
         
-        .chat-box {
-            max-width: 800px; margin: 20px auto; background: white;
-            border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .hud-section {
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0be881;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #d2dae2;
+            margin-top: 5px;
+        }
+        
+        #weapon-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #weapon-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffdd59;
+        }
+        
+        #ammo-count {
+            margin-right: 15px;
+            font-size: 20px;
+            color: #ffaf40;
+        }
+        
+        #health-bar-container {
+            width: 200px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        #health-bar {
+            height: 100%;
+            background: linear-gradient(to right, #ff3838, #ff9f1a);
+            width: 100%;
+            transition: width 0.3s;
+        }
+        
+        #mini-map {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 180px;
+            height: 180px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            border: 3px solid #4bcffa;
+            overflow: hidden;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+        }
+        
+        .controls-info {
+            text-align: right;
+            margin-bottom: 10px;
+            color: #d2dae2;
+            font-size: 14px;
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
             display: none;
         }
         
-        .header { background: linear-gradient(to right, #667eea, #764ba2); color: white; padding: 20px; }
-        .rooms { width: 200px; background: #f8f9fa; border-right: 1px solid #ddd; }
-        .room { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .room.active { background: #667eea; color: white; }
-        .messages { flex: 1; padding: 20px; height: 400px; overflow-y: auto; }
-        .message { margin: 10px 0; padding: 10px 15px; border-radius: 15px; max-width: 70%; }
-        .message.own { background: #667eea; color: white; margin-left: auto; }
-        .message.other { background: #f1f1f1; color: #333; }
-        .input-area { padding: 20px; background: #f8f9fa; border-top: 1px solid #ddd; }
-        input { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 25px; font-size: 16px; }
-        button { background: #667eea; color: white; border: none; padding: 15px 30px; border-radius: 25px; cursor: pointer; }
+        #game-over h2 {
+            font-size: 48px;
+            color: #ff3838;
+            margin-bottom: 20px;
+        }
+        
+        #game-over p {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #ffaf40;
+        }
+        
+        button {
+            background: linear-gradient(to right, #0be881, #05c46b);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+            margin: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(11, 232, 129, 0.4);
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0a3d62, #1e272e);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+        
+        #title {
+            font-size: 60px;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #ff9f1a, #ff3838);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        #subtitle {
+            font-size: 24px;
+            margin-bottom: 40px;
+            color: #4bcffa;
+        }
+        
+        #loading {
+            font-size: 20px;
+            color: #0be881;
+            margin-top: 30px;
+        }
+        
+        #instructions {
+            max-width: 800px;
+            margin-top: 40px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #instructions h3 {
+            color: #ffdd59;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .instruction-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .instruction-key {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #ffaf40;
+        }
+        
+        .instruction-text {
+            color: #d2dae2;
+        }
         
         @media (max-width: 768px) {
-            .chat-box { flex-direction: column; }
-            .rooms { width: 100%; }
+            #title {
+                font-size: 40px;
+            }
+            
+            #subtitle {
+                font-size: 18px;
+            }
+            
+            #instructions {
+                padding: 15px;
+                margin: 20px;
+            }
+            
+            #mini-map {
+                width: 120px;
+                height: 120px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- شاشة تسجيل الدخول -->
-    <div id="loginBox" class="login-box">
-        <h2>🚀 دردشة حقيقية</h2>
-        <p style="margin: 20px 0; color: #666;">أدخل اسمك للدخول إلى المحادثة</p>
-        <input type="text" id="username" placeholder="اسمك..." style="width:100%; padding:15px; margin:10px 0;">
-        <button onclick="login()" style="width:100%; padding:15px; margin-top:20px;">الدخول للدردشة</button>
-        <div id="status" style="margin-top:20px; color:#666; font-size:14px;">
-            🔄 جاري الاتصال بالسيرفر...
-        </div>
-    </div>
-
-    <!-- واجهة الدردشة -->
-    <div id="chatBox" class="chat-box">
-        <div class="header">
-            <h3>💬 دردشة حقيقية</h3>
-            <p id="welcomeMsg">مرحباً!</p>
+    <div id="start-screen">
+        <h1 id="title">معركة النخبة</h1>
+        <p id="subtitle">لعبة حرب واقعية ثلاثية الأبعاد</p>
+        <button id="start-btn">بدء المعركة</button>
+        
+        <div id="instructions">
+            <h3>تعليمات اللعبة</h3>
+            <div class="instruction-row">
+                <div class="instruction-key">W, A, S, D</div>
+                <div class="instruction-text">للتحرك للأمام والخلف واليمين واليسار</div>
+            </div>
+            <div class="instruction-row">
+                <div class="instruction-key">مؤشر الماوس</div>
+                <div class="instruction-text">لتغيير اتجاه النظر</div>
+            </div>
+            <div class="instruction-row">
+                <div class="instruction-key">زر الفأرة الأيسر</div>
+                <div class="instruction-text">لإطلاق النار</div>
+            </div>
+            <div class="instruction-row">
+                <div class="instruction-key">R</div>
+                <div class="instruction-text">إعادة تعبئة الذخيرة</div>
+            </div>
+            <div class="instruction-row">
+                <div class="instruction-key">Space</div>
+                <div class="instruction-text">للقيام بالقفز</div>
+            </div>
+            <div class="instruction-row">
+                <div class="instruction-key">E</div>
+                <div class="instruction-text">لجمع الأدوات</div>
+            </div>
+            <div class="instruction-row">
+                <div class="instruction-key">1, 2, 3</div>
+                <div class="instruction-text">لتغيير السلاح</div>
+            </div>
         </div>
         
-        <div style="display:flex; min-height:500px;">
-            <!-- الغرف -->
-            <div class="rooms" id="roomsList">
-                <!-- الغرف تظهر هنا بالجافاسكريبت -->
+        <div id="loading">جاري تحميل اللعبة...</div>
+    </div>
+    
+    <div id="container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="hud">
+            <div class="hud-section" id="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="health">100</div>
+                    <div class="stat-label">الصحة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="armor">50</div>
+                    <div class="stat-label">الدرع</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="kills">0</div>
+                    <div class="stat-label">القتلى</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="players-left">50</div>
+                    <div class="stat-label">اللاعبون المتبقون</div>
+                </div>
             </div>
             
-            <!-- المحادثة -->
-            <div style="flex:1; display:flex; flex-direction:column;">
-                <div class="messages" id="messages">
-                    <!-- الرسائل تظهر هنا -->
-                </div>
-                
-                <div class="input-area">
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleKeyPress(event)">
-                        <button onclick="sendMessage()">إرسال</button>
-                    </div>
-                </div>
+            <div class="hud-section" id="weapon-info">
+                <div id="ammo-count">30/120</div>
+                <div id="weapon-name">بندقية هجومية</div>
             </div>
+            
+            <div id="health-bar-container">
+                <div id="health-bar"></div>
+            </div>
+        </div>
+        
+        <div id="mini-map"></div>
+        
+        <div id="controls">
+            <div class="controls-info">W, A, S, D - للحركة</div>
+            <div class="controls-info">زر الفأرة الأيسر - إطلاق النار</div>
+            <div class="controls-info">R - إعادة التعبئة</div>
+            <div class="controls-info">E - جمع الأدوات</div>
+        </div>
+        
+        <div id="game-over">
+            <h2>لقد قتلت!</h2>
+            <p id="final-stats">قمت بتصفية <span id="final-kills">0</span> لاعب</p>
+            <button id="restart-btn">إعادة المحاولة</button>
+            <button id="menu-btn">العودة للقائمة</button>
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <!-- مكتبات JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // 🔧 ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️
-        // ضع هنا عنوان IP لسيرفرك على الهاتف
-        // مثال: http://192.168.1.100:5000
-        const SERVER_URL = 'http://YOUR_PHONE_IP_HERE:5000';
-        // ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️
+        // عناصر DOM
+        const startScreen = document.getElementById('start-screen');
+        const gameCanvas = document.getElementById('gameCanvas');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const gameOverScreen = document.getElementById('game-over');
+        const healthElement = document.getElementById('health');
+        const armorElement = document.getElementById('armor');
+        const killsElement = document.getElementById('kills');
+        const playersLeftElement = document.getElementById('players-left');
+        const ammoCountElement = document.getElementById('ammo-count');
+        const weaponNameElement = document.getElementById('weapon-name');
+        const healthBar = document.getElementById('health-bar');
+        const finalKillsElement = document.getElementById('final-kills');
+        const finalStatsElement = document.getElementById('final-stats');
         
-        let socket = null;
-        let currentUser = null;
-        let currentRoom = 'general';
+        // متغيرات اللعبة
+        let scene, camera, renderer, controls;
+        let player, enemies = [];
+        let weapons = [];
+        let currentWeaponIndex = 0;
+        let playerHealth = 100;
+        let playerArmor = 50;
+        let playerKills = 0;
+        let playersLeft = 50;
+        let isGameRunning = false;
+        let clock = new THREE.Clock();
         
-        // تحديث حالة الاتصال
-        document.getElementById('status').innerHTML = `📡 جاري الاتصال بـ: ${SERVER_URL}`;
+        // إعدادات الأسلحة
+        const weaponConfigs = [
+            { name: "بندقية هجومية", damage: 25, fireRate: 0.1, ammo: 30, maxAmmo: 120, color: 0x808080 },
+            { name: "بندقية قنص", damage: 80, fireRate: 1.5, ammo: 5, maxAmmo: 30, color: 0x006400 },
+            { name: "مسدس", damage: 15, fireRate: 0.3, ammo: 12, maxAmmo: 60, color: 0x8B4513 }
+        ];
         
-        // تسجيل الدخول
-        function login() {
-            const username = document.getElementById('username').value.trim();
-            if (!username) {
-                alert('أدخل اسمك أولاً');
+        // تهيئة اللعبة
+        function initGame() {
+            // إنشاء المشهد
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x87CEEB, 10, 500);
+            
+            // إنشاء الكاميرا
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 20);
+            
+            // إنشاء العارض
+            renderer = new THREE.WebGLRenderer({ canvas: gameCanvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // إضافة الإضاءة
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(100, 100, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.camera.left = -100;
+            directionalLight.shadow.camera.right = 100;
+            directionalLight.shadow.camera.top = 100;
+            directionalLight.shadow.camera.bottom = -100;
+            scene.add(directionalLight);
+            
+            // إنشاء الأرض
+            const groundGeometry = new THREE.PlaneGeometry(500, 500);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x3a7c3a });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // إضافة عشب
+            for (let i = 0; i < 500; i++) {
+                const grassGeometry = new THREE.ConeGeometry(0.2, 1, 3);
+                const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x2e8b57 });
+                const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+                grass.position.set(
+                    Math.random() * 400 - 200,
+                    0.5,
+                    Math.random() * 400 - 200
+                );
+                grass.rotation.x = Math.random() * Math.PI;
+                scene.add(grass);
+            }
+            
+            // إنشاء المباني والأشجار
+            createEnvironment();
+            
+            // إنشاء اللاعب
+            createPlayer();
+            
+            // إنشاء الأسلحة
+            createWeapons();
+            
+            // إنشاء الأعداء
+            createEnemies(10);
+            
+            // إضافة أحداث لوحة المفاتيح والماوس
+            setupControls();
+            
+            // بدء حلقة اللعبة
+            animate();
+            
+            // تحديث عناصر واجهة المستخدم
+            updateHUD();
+            
+            // إخفاء شاشة البداية
+            startScreen.style.display = 'none';
+            isGameRunning = true;
+        }
+        
+        // إنشاء البيئة
+        function createEnvironment() {
+            // إنشاء مباني
+            const buildingColors = [0x8B4513, 0xA0522D, 0xD2691E, 0xCD853F];
+            
+            for (let i = 0; i < 15; i++) {
+                const buildingHeight = Math.random() * 15 + 5;
+                const buildingGeometry = new THREE.BoxGeometry(
+                    Math.random() * 20 + 10,
+                    buildingHeight,
+                    Math.random() * 20 + 10
+                );
+                const buildingMaterial = new THREE.MeshLambertMaterial({ 
+                    color: buildingColors[Math.floor(Math.random() * buildingColors.length)]
+                });
+                const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+                building.position.set(
+                    Math.random() * 400 - 200,
+                    buildingHeight / 2,
+                    Math.random() * 400 - 200
+                );
+                building.castShadow = true;
+                building.receiveShadow = true;
+                scene.add(building);
+                
+                // إضافة سقف
+                const roofGeometry = new THREE.ConeGeometry(
+                    Math.random() * 10 + 8,
+                    Math.random() * 5 + 3,
+                    4
+                );
+                const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+                const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+                roof.position.set(
+                    building.position.x,
+                    buildingHeight + 1,
+                    building.position.z
+                );
+                roof.castShadow = true;
+                scene.add(roof);
+            }
+            
+            // إنشاء أشجار
+            for (let i = 0; i < 30; i++) {
+                // جذع الشجرة
+                const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
+                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+                trunk.position.set(
+                    Math.random() * 400 - 200,
+                    2,
+                    Math.random() * 400 - 200
+                );
+                trunk.castShadow = true;
+                scene.add(trunk);
+                
+                // أوراق الشجرة
+                const leavesGeometry = new THREE.SphereGeometry(3, 8, 8);
+                const leavesMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+                const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+                leaves.position.set(
+                    trunk.position.x,
+                    6,
+                    trunk.position.z
+                );
+                leaves.castShadow = true;
+                scene.add(leaves);
+            }
+            
+            // إضافة بعض الصناديق
+            for (let i = 0; i < 20; i++) {
+                const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
+                const boxMaterial = new THREE.MeshLambertMaterial({ color: 0xDAA520 });
+                const box = new THREE.Mesh(boxGeometry, boxMaterial);
+                box.position.set(
+                    Math.random() * 400 - 200,
+                    1.5,
+                    Math.random() * 400 - 200
+                );
+                box.castShadow = true;
+                scene.add(box);
+            }
+        }
+        
+        // إنشاء اللاعب
+        function createPlayer() {
+            // نموذج بسيط للاعب
+            const playerGeometry = new THREE.CapsuleGeometry(1, 3, 4, 8);
+            const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x1E90FF });
+            player = new THREE.Mesh(playerGeometry, playerMaterial);
+            player.position.set(0, 5, 0);
+            player.castShadow = true;
+            scene.add(player);
+            
+            // إضافة ضوء للاعب (مثل ضوء الشمس)
+            const playerLight = new THREE.PointLight(0x87CEEB, 0.5, 20);
+            player.add(playerLight);
+        }
+        
+        // إنشاء الأسلحة
+        function createWeapons() {
+            for (let i = 0; i < weaponConfigs.length; i++) {
+                const config = weaponConfigs[i];
+                
+                // إنشاء نموذج سلاح بسيط
+                const weaponGroup = new THREE.Group();
+                
+                // جسم السلاح
+                const bodyGeometry = new THREE.BoxGeometry(0.5, 0.2, 2);
+                const bodyMaterial = new THREE.MeshLambertMaterial({ color: config.color });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                weaponGroup.add(body);
+                
+                // مقبض السلاح
+                const handleGeometry = new THREE.BoxGeometry(0.3, 0.5, 0.8);
+                const handleMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+                const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+                handle.position.set(0, -0.3, -0.5);
+                weaponGroup.add(handle);
+                
+                // مخزن الذخيرة
+                const magazineGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.5);
+                const magazineMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+                const magazine = new THREE.Mesh(magazineGeometry, magazineMaterial);
+                magazine.position.set(0, 0.3, 0.2);
+                weaponGroup.add(magazine);
+                
+                weaponGroup.position.set(0.5, -0.3, -1);
+                weaponGroup.rotation.y = Math.PI / 2;
+                
+                // إخفاء جميع الأسلحة في البداية
+                weaponGroup.visible = (i === 0);
+                
+                camera.add(weaponGroup);
+                weapons.push({
+                    model: weaponGroup,
+                    config: config,
+                    currentAmmo: config.ammo,
+                    totalAmmo: config.maxAmmo
+                });
+            }
+        }
+        
+        // إنشاء الأعداء
+        function createEnemies(count) {
+            for (let i = 0; i < count; i++) {
+                const enemyGeometry = new THREE.CapsuleGeometry(1, 3, 4, 8);
+                const enemyMaterial = new THREE.MeshLambertMaterial({ color: 0xFF4500 });
+                const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+                
+                // وضع العدو في مكان عشوائي
+                enemy.position.set(
+                    Math.random() * 300 - 150,
+                    5,
+                    Math.random() * 300 - 150
+                );
+                
+                enemy.castShadow = true;
+                scene.add(enemy);
+                
+                // إضافة حركة عشوائية للعدو
+                enemies.push({
+                    model: enemy,
+                    health: 100,
+                    moveSpeed: Math.random() * 0.02 + 0.01,
+                    rotationSpeed: Math.random() * 0.02 - 0.01
+                });
+            }
+        }
+        
+        // إعداد التحكم
+        function setupControls() {
+            const keys = {};
+            const mouse = { x: 0, y: 0 };
+            
+            // أحداث لوحة المفاتيح
+            window.addEventListener('keydown', (e) => {
+                keys[e.code] = true;
+                
+                // إعادة تعبئة الذخيرة
+                if (e.code === 'KeyR') {
+                    reloadWeapon();
+                }
+                
+                // تغيير السلاح
+                if (e.code === 'Digit1') {
+                    switchWeapon(0);
+                } else if (e.code === 'Digit2') {
+                    switchWeapon(1);
+                } else if (e.code === 'Digit3') {
+                    switchWeapon(2);
+                }
+                
+                // القفز
+                if (e.code === 'Space' && player.position.y <= 5.1) {
+                    player.position.y += 10;
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.code] = false;
+            });
+            
+            // أحداث الماوس
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                
+                // تدوير الكاميرا بناءً على حركة الماوس
+                if (isGameRunning) {
+                    camera.rotation.y -= mouse.x * 0.01;
+                    camera.rotation.x -= mouse.y * 0.01;
+                    
+                    // تحديد دوران الكاميرا
+                    camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, camera.rotation.x));
+                }
+            });
+            
+            window.addEventListener('mousedown', (e) => {
+                if (e.button === 0 && isGameRunning) { // زر الماوس الأيسر
+                    fireWeapon();
+                }
+            });
+            
+            // تحديث حركة اللاعب
+            function updatePlayerMovement() {
+                if (!isGameRunning) return;
+                
+                const speed = 0.3;
+                const direction = new THREE.Vector3();
+                
+                if (keys['KeyW'] || keys['ArrowUp']) {
+                    direction.z -= speed;
+                }
+                if (keys['KeyS'] || keys['ArrowDown']) {
+                    direction.z += speed;
+                }
+                if (keys['KeyA'] || keys['ArrowLeft']) {
+                    direction.x -= speed;
+                }
+                if (keys['KeyD'] || keys['ArrowRight']) {
+                    direction.x += speed;
+                }
+                
+                // تطبيق دوران الكاميرا على اتجاه الحركة
+                direction.applyEuler(camera.rotation);
+                
+                // تحديث موقع اللاعب
+                player.position.x += direction.x;
+                player.position.z += direction.z;
+                
+                // محاكاة الجاذبية
+                if (player.position.y > 5) {
+                    player.position.y -= 0.5;
+                } else {
+                    player.position.y = 5;
+                }
+                
+                // تحديث موقع الكاميرا لتبع اللاعب
+                camera.position.x = player.position.x;
+                camera.position.y = player.position.y + 5;
+                camera.position.z = player.position.z + 10;
+                
+                // تحديث دوران الكاميرا بناءً على موقع اللاعب
+                camera.lookAt(player.position.x, player.position.y + 2, player.position.z);
+            }
+            
+            // دمج تحديث الحركة في حلقة اللعبة
+            setInterval(updatePlayerMovement, 16);
+        }
+        
+        // إطلاق النار
+        function fireWeapon() {
+            const currentWeapon = weapons[currentWeaponIndex];
+            
+            if (currentWeapon.currentAmmo <= 0) {
+                // صوت إطلاق نار فارغ
                 return;
             }
             
-            document.getElementById('status').innerHTML = '🔄 جاري الاتصال...';
+            // تقليل الذخيرة
+            currentWeapon.currentAmmo--;
+            updateHUD();
             
-            // الاتصال بالسيرفر
-            socket = io(SERVER_URL, {
-                transports: ['websocket', 'polling'],
-                reconnection: true,
-                reconnectionAttempts: 10
-            });
+            // تأثير ارتداد السلاح
+            currentWeapon.model.position.z += 0.1;
+            setTimeout(() => {
+                currentWeapon.model.position.z -= 0.1;
+            }, 50);
             
-            // أحداث السوكيت
-            socket.on('connect', () => {
-                console.log('✅ متصل بالسيرفر');
-                document.getElementById('status').innerHTML = '✅ متصل - جاري التسجيل...';
-                
-                // تسجيل المستخدم
-                socket.emit('register', { username: username });
-            });
+            // إنشاء شعاع لإطلاق النار
+            const direction = new THREE.Vector3(0, 0, -1);
+            direction.applyQuaternion(camera.quaternion);
             
-            socket.on('connected', (data) => {
-                console.log('🎉 مرحباً بك:', data);
-            });
+            const rayOrigin = camera.position.clone();
+            const rayDirection = direction.clone();
             
-            socket.on('registered', (data) => {
-                console.log('✅ مسجل:', data);
-                currentUser = { id: data.user_id, username: data.username };
-                
-                // إخفاء تسجيل الدخول وإظهار الدردشة
-                document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('chatBox').style.display = 'block';
-                document.getElementById('welcomeMsg').innerHTML = `مرحباً ${data.username}!`;
-                
-                // عرض الغرف
-                updateRooms(data.rooms);
-                
-                // الانضمام للغرفة الافتراضية
-                joinRoom('general');
-            });
+            // إنشاء raycast لاكتشاف الاصطدامات
+            const raycaster = new THREE.Raycaster(rayOrigin, rayDirection);
+            const intersects = raycaster.intersectObjects(enemies.map(e => e.model));
             
-            socket.on('room_joined', (data) => {
-                console.log('🚪 انضممت للغرفة:', data);
-                currentRoom = data.room;
-                
-                // تحديث العنوان
-                document.getElementById('welcomeMsg').innerHTML = 
-                    `مرحباً ${currentUser.username} - ${data.room_name} (${data.members} أعضاء)`;
-                
-                // عرض الرسائل
-                showMessages(data.messages);
-                
-                // تحديث الغرف النشطة
-                updateActiveRoom(data.room);
-            });
-            
-            socket.on('new_message', (data) => {
-                if (data.room === currentRoom) {
-                    addMessage(data);
-                }
-            });
-            
-            socket.on('room_update', (data) => {
-                if (data.room === currentRoom) {
-                    document.getElementById('welcomeMsg').innerHTML = 
-                        `مرحباً ${currentUser.username} - ${rooms[currentRoom]?.name || currentRoom} (${data.members} أعضاء)`;
-                }
-                updateRoomsList();
-            });
-            
-            socket.on('user_joined', (data) => {
-                console.log('👤 انضم:', data);
-                showNotification(`${data.username} انضم للدردشة`);
-            });
-            
-            socket.on('error', (data) => {
-                alert('❌ خطأ: ' + data.message);
-            });
-            
-            socket.on('connect_error', (error) => {
-                document.getElementById('status').innerHTML = 
-                    `❌ فشل الاتصال. تأكد من:<br>
-                    1. تشغيل السيرفر على الهاتف<br>
-                    2. العنوان الصحيح: ${SERVER_URL}<br>
-                    3. نفس الشبكة Wi-Fi`;
-                console.error('❌ خطأ اتصال:', error);
-            });
-        }
-        
-        // الانضمام لغرفة
-        function joinRoom(roomId) {
-            if (currentUser) {
-                socket.emit('join_room', {
-                    room_id: roomId,
-                    user_id: currentUser.id
-                });
-            }
-        }
-        
-        // إرسال رسالة
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            if (message && socket && currentUser) {
-                socket.emit('send_message', {
-                    room_id: currentRoom,
-                    user_id: currentUser.id,
-                    message: message
-                });
-                input.value = '';
-            }
-        }
-        
-        // الضغط على Enter
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-        
-        // عرض الرسائل
-        function showMessages(messages) {
-            const container = document.getElementById('messages');
-            container.innerHTML = '';
-            
-            messages.forEach(msg => {
-                addMessage(msg, false);
-            });
-            
-            // التمرير للأسفل
-            container.scrollTop = container.scrollHeight;
-        }
-        
-        // إضافة رسالة
-        function addMessage(data, scroll = true) {
-            const container = document.getElementById('messages');
-            const isOwn = data.user_id === currentUser?.id;
-            
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${isOwn ? 'own' : 'other'}`;
-            msgDiv.innerHTML = `
-                <div style="font-weight:bold; margin-bottom:5px;">${data.username}</div>
-                <div>${data.message}</div>
-                <div style="font-size:12px; opacity:0.7; margin-top:5px;">${data.time}</div>
-            `;
-            
-            container.appendChild(msgDiv);
-            
-            if (scroll) {
-                container.scrollTop = container.scrollHeight;
-            }
-        }
-        
-        // تحديث قائمة الغرف
-        function updateRooms(roomsList) {
-            window.rooms = {};
-            roomsList.forEach(room => {
-                window.rooms[room.id] = room;
-            });
-            updateRoomsList();
-        }
-        
-        // تحديث واجهة الغرف
-        function updateRoomsList() {
-            const container = document.getElementById('roomsList');
-            container.innerHTML = '';
-            
-            for (const roomId in window.rooms) {
-                const room = window.rooms[roomId];
-                const roomDiv = document.createElement('div');
-                roomDiv.className = `room ${roomId === currentRoom ? 'active' : ''}`;
-                roomDiv.innerHTML = `
-                    <div style="font-weight:bold;">${room.name}</div>
-                    <div style="font-size:12px; opacity:0.8;">${room.members} أعضاء</div>
-                `;
-                roomDiv.onclick = () => joinRoom(roomId);
-                container.appendChild(roomDiv);
-            }
-        }
-        
-        // تحديث الغرفة النشطة
-        function updateActiveRoom(roomId) {
-            const roomDivs = document.querySelectorAll('.room');
-            roomDivs.forEach(div => {
-                div.classList.remove('active');
-            });
-            
-            const activeDiv = document.querySelector(`.room[onclick*="${roomId}"]`);
-            if (activeDiv) {
-                activeDiv.classList.add('active');
-            }
-        }
-        
-        // عرض إشعار
-        function showNotification(text) {
-            console.log('📢', text);
-        }
-    </script>
-</body>
-</html>                    `;
-                    roomItem.onclick = () => this.joinRoom(roomId);
-                    roomsList.appendChild(roomItem);
-                }
-            }
-            
-            updateActiveRoom(roomId) {
-                const roomItems = document.querySelectorAll('.room-item');
-                roomItems.forEach(item => {
-                    item.classList.remove('active');
-                    if (item.querySelector('.room-name').textContent === this.rooms[roomId]?.name) {
-                        item.classList.add('active');
+            // إذا أصاب اللاعب عدواً
+            if (intersects.length > 0) {
+                const enemyIndex = enemies.findIndex(e => e.model === intersects[0].object);
+                if (enemyIndex !== -1) {
+                    // تخفيض صحة العدو
+                    enemies[enemyIndex].health -= currentWeapon.config.damage;
+                    
+                    // إذا مات العدو
+                    if (enemies[enemyIndex].health <= 0) {
+                        scene.remove(enemies[enemyIndex].model);
+                        enemies.splice(enemyIndex, 1);
+                        playerKills++;
+                        playersLeft--;
+                        
+                        // إضافة أعداء جدد بشكل عشوائي
+                        if (enemies.length < 5) {
+                            createEnemies(1);
+                        }
+                        
+                        updateHUD();
                     }
-                });
-            }
-            
-            displayMessages(messages) {
-                const container = document.getElementById('messagesContainer');
-                container.innerHTML = '';
-                
-                messages.forEach(msg => {
-                    this.addMessage(msg, false);
-                });
-                
-                container.scrollTop = container.scrollHeight;
-            }
-            
-            addMessage(data, scroll = true) {
-                const container = document.getElementById('messagesContainer');
-                
-                // إزالة رسالة الترحيب إذا كانت موجودة
-                const welcomeMsg = container.querySelector('.welcome-message');
-                if (welcomeMsg) welcomeMsg.remove();
-                
-                const messageDiv = document.createElement('div');
-                const isOwnMessage = data.sender_id === this.user?.id;
-                messageDiv.className = `message ${isOwnMessage ? 'sent' : 'received'}`;
-                
-                const time = new Date(data.timestamp).toLocaleTimeString('ar-EG', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                messageDiv.innerHTML = `
-                    <div class="message-sender">${data.sender}</div>
-                    <div class="message-content">${data.message}</div>
-                    <div class="message-time">${time}</div>
-                `;
-                
-                container.appendChild(messageDiv);
-                
-                if (scroll) {
-                    container.scrollTop = container.scrollHeight;
+                    
+                    // تأثير الدم
+                    createBloodEffect(intersects[0].point);
                 }
             }
             
-            showNotification(message) {
-                console.log('📢', message);
-                // يمكن إضافة مكتبة إشعارات هنا
-            }
+            // إنشاء تأثير لإطلاق النار
+            createMuzzleFlash();
+        }
+        
+        // إنشاء تأثير اللهب عند إطلاق النار
+        function createMuzzleFlash() {
+            const flashLight = new THREE.PointLight(0xFF4500, 2, 10);
+            flashLight.position.set(0, 0, -2);
+            camera.add(flashLight);
             
-            disconnect() {
-                if (this.socket) {
-                    this.socket.disconnect();
-                }
-                this.socket = null;
-                this.user = null;
-                this.connected = false;
+            setTimeout(() => {
+                camera.remove(flashLight);
+            }, 50);
+        }
+        
+        // إنشاء تأثير الدم
+        function createBloodEffect(position) {
+            // تأثير بسيط للدم (نقاط حمراء)
+            for (let i = 0; i < 5; i++) {
+                const bloodGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+                const bloodMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+                const blood = new THREE.Mesh(bloodGeometry, bloodMaterial);
+                blood.position.copy(position);
+                blood.position.x += Math.random() * 0.5 - 0.25;
+                blood.position.y += Math.random() * 0.5 - 0.25;
+                blood.position.z += Math.random() * 0.5 - 0.25;
+                scene.add(blood);
+                
+                // إزالة تأثير الدم بعد ثانية
+                setTimeout(() => {
+                    scene.remove(blood);
+                }, 1000);
             }
         }
         
-        // بدء التطبيق
-        const app = new ChatApp();
+        // إعادة تعبئة السلاح
+        function reloadWeapon() {
+            const currentWeapon = weapons[currentWeaponIndex];
+            const ammoNeeded = currentWeapon.config.ammo - currentWeapon.currentAmmo;
+            
+            if (currentWeapon.totalAmmo <= 0 || ammoNeeded <= 0) return;
+            
+            const ammoToReload = Math.min(ammoNeeded, currentWeapon.totalAmmo);
+            currentWeapon.currentAmmo += ammoToReload;
+            currentWeapon.totalAmmo -= ammoToReload;
+            
+            updateHUD();
+        }
+        
+        // تغيير السلاح
+        function switchWeapon(index) {
+            if (index < 0 || index >= weapons.length) return;
+            
+            // إخفاء السلاح الحالي
+            weapons[currentWeaponIndex].model.visible = false;
+            
+            // تغيير السلاح
+            currentWeaponIndex = index;
+            
+            // إظهار السلاح الجديد
+            weapons[currentWeaponIndex].model.visible = true;
+            
+            updateHUD();
+        }
+        
+        // تحديث واجهة المستخدم
+        function updateHUD() {
+            const currentWeapon = weapons[currentWeaponIndex];
+            
+            healthElement.textContent = Math.max(0, playerHealth);
+            armorElement.textContent = Math.max(0, playerArmor);
+            killsElement.textContent = playerKills;
+            playersLeftElement.textContent = playersLeft;
+            ammoCountElement.textContent = `${currentWeapon.currentAmmo}/${currentWeapon.totalAmmo}`;
+            weaponNameElement.textContent = currentWeapon.config.name;
+            
+            // تحديث شريط الصحة
+            healthBar.style.width = `${playerHealth}%`;
+            
+            // تغيير لون شريط الصحة حسب النسبة
+            if (playerHealth > 50) {
+                healthBar.style.background = "linear-gradient(to right, #0be881, #05c46b)";
+            } else if (playerHealth > 25) {
+                healthBar.style.background = "linear-gradient(to right, #ffdd59, #ff9f1a)";
+            } else {
+                healthBar.style.background = "linear-gradient(to right, #ff3838, #ff9f1a)";
+            }
+        }
+        
+        // حركة الأعداء
+        function updateEnemies() {
+            for (let i = 0; i < enemies.length; i++) {
+                const enemy = enemies[i];
+                
+                // تحرك العدو بشكل عشوائي
+                enemy.model.position.x += Math.sin(Date.now() * 0.001 * enemy.moveSpeed) * 0.05;
+                enemy.model.position.z += Math.cos(Date.now() * 0.001 * enemy.moveSpeed) * 0.05;
+                
+                // تدوير العدو
+                enemy.model.rotation.y += enemy.rotationSpeed;
+                
+                // تحرك تجاه اللاعب إذا كان قريبًا
+                const distanceToPlayer = enemy.model.position.distanceTo(player.position);
+                if (distanceToPlayer < 50) {
+                    const direction = new THREE.Vector3();
+                    direction.subVectors(player.position, enemy.model.position).normalize();
+                    enemy.model.position.add(direction.multiplyScalar(0.02));
+                    
+                    // دوران العدو لمواجهة اللاعب
+                    enemy.model.lookAt(player.position);
+                }
+                
+                // هجوم العدو على اللاعب إذا كان قريبًا
+                if (distanceToPlayer < 5) {
+                    if (Math.random() < 0.01) { // فرصة 1% كل إطار
+                        playerHealth -= 5;
+                        updateHUD();
+                        
+                        if (playerHealth <= 0) {
+                            gameOver();
+                        }
+                    }
+                }
+            }
+            
+            // تحديث عدد اللاعبين المتبقين
+            playersLeft = 50 - playerKills + enemies.length;
+            playersLeftElement.textContent = playersLeft;
+        }
+        
+        // نهاية اللعبة
+        function gameOver() {
+            isGameRunning = false;
+            gameOverScreen.style.display = 'flex';
+            finalKillsElement.textContent = playerKills;
+            
+            if (playerKills === 1) {
+                finalStatsElement.innerHTML = `قمت بتصفية <span id="final-kills">${playerKills}</span> لاعب`;
+            } else {
+                finalStatsElement.innerHTML = `قمت بتصفية <span id="final-kills">${playerKills}</span> لاعبين`;
+            }
+        }
+        
+        // إعادة تشغيل اللعبة
+        function restartGame() {
+            // إعادة تعيين المتغيرات
+            playerHealth = 100;
+            playerArmor = 50;
+            playerKills = 0;
+            playersLeft = 50;
+            isGameRunning = true;
+            
+            // إعادة تعيين موقع اللاعب
+            player.position.set(0, 5, 0);
+            
+            // إزالة الأعداء الحاليين
+            for (let enemy of enemies) {
+                scene.remove(enemy.model);
+            }
+            enemies = [];
+            
+            // إنشاء أعداء جدد
+            createEnemies(10);
+            
+            // إعادة تعيين الأسلحة
+            for (let i = 0; i < weapons.length; i++) {
+                weapons[i].currentAmmo = weapons[i].config.ammo;
+                weapons[i].totalAmmo = weapons[i].config.maxAmmo;
+                weapons[i].model.visible = (i === 0);
+            }
+            currentWeaponIndex = 0;
+            
+            // تحديث واجهة المستخدم
+            updateHUD();
+            
+            // إخفاء شاشة نهاية اللعبة
+            gameOverScreen.style.display = 'none';
+        }
+        
+        // العودة للقائمة
+        function goToMenu() {
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            isGameRunning = false;
+        }
+        
+        // دورة الحركة (Animation Loop)
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (!isGameRunning) return;
+            
+            const delta = clock.getDelta();
+            
+            // تحديث حركة الأعداء
+            updateEnemies();
+            
+            // تدوير الأسلحة قليلاً لتأثير الواقعية
+            if (weapons[currentWeaponIndex]) {
+                weapons[currentWeaponIndex].model.rotation.y = Math.PI / 2 + Math.sin(Date.now() * 0.001) * 0.02;
+            }
+            
+            // تحريك السحب في الخلفية
+            if (scene.fog) {
+                scene.fog.density = 0.01 + Math.sin(Date.now() * 0.0001) * 0.002;
+            }
+            
+            // عرض المشهد
+            renderer.render(scene, camera);
+        }
+        
+        // إعادة ضبط حجم اللعبة عند تغيير حجم النافذة
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // أحداث الأزرار
+        startBtn.addEventListener('click', initGame);
+        restartBtn.addEventListener('click', restartGame);
+        menuBtn.addEventListener('click', goToMenu);
+        
+        // إظهار شاشة البداية
+        startScreen.style.display = 'flex';
     </script>
 </body>
 </html>
